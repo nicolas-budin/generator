@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Couteau suisse de la Doyenne</title>
+<style>
+  :root {
+    --bg: #f5f5f7; --card: #fff; --text: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7;
+    --accent: #0071e3; --accent-text: #fff; --ok: #1a7f37; --ok-bg: #e9f6ec;
+    --warn: #9a5b00; --warn-bg: #fff4e0; --err: #c42b1c; --err-bg: #fdecea; --fam: #c42b1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1e; --card: #2c2c2e; --text: #f5f5f7; --muted: #a1a1a6; --line: #48484a;
+      --accent: #0a84ff; --ok: #4cc764; --ok-bg: #1f3325; --warn: #ffb340; --warn-bg: #3a2c12;
+      --err: #ff6961; --err-bg: #3b1d1b; --fam: #ff6961;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 0 0 12px; display: flex; gap: 10px; align-items: center; }
+  h2 .step { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-text);
+    font-size: 13px; display: inline-grid; place-items: center; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  #drop { border: 2px dashed var(--line); border-radius: 10px; padding: 28px; text-align: center; cursor: pointer; color: var(--muted); }
+  #drop.over { border-color: var(--accent); color: var(--accent); }
+  #drop strong { color: var(--text); }
+  #filename { display: block; margin-top: 6px; color: var(--accent); }
+  label { font-weight: 600; }
+  input[type=text], select, input[type=number] { font: inherit; color: var(--text); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  #sheet-info { color: var(--muted); }
+  .counter { display: inline-flex; align-items: center; gap: 6px; }
+  .counter input { width: 56px; text-align: center; }
+  button { font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text);
+    padding: 7px 14px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; padding: 10px 20px; }
+  .counter button { width: 34px; padding: 7px 0; }
+  .teacher-row { display: grid; grid-template-columns: 24px 1fr 120px; gap: 8px; align-items: center; margin-top: 8px; max-width: 520px; }
+  .teacher-row .num { color: var(--muted); text-align: right; }
+  .hint { color: var(--muted); font-size: 13px; }
+  #columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 12px; }
+  .col { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .col.excl { opacity: .7; }
+  .col header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .col h3 { margin: 0; font-size: 15px; }
+  .col header span { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .col ul { list-style: none; margin: 0; padding: 0; }
+  .col li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 12px;
+    border-bottom: 1px solid var(--line); font-size: 14px; }
+  .col li:last-child { border-bottom: 0; }
+  .col li select { font-size: 12px; padding: 3px 4px; max-width: 120px; }
+  .tag { display: inline-block; font-size: 11px; border-radius: 4px; padding: 0 5px; margin-left: 4px; }
+  .tag.fam { background: var(--err-bg); color: var(--fam); }
+  .tag.cls, .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  .summary { margin: 12px 0 0; font-size: 14px; }
+  .summary.ok { color: var(--ok); } .summary.warn { color: var(--warn); }
+  .message { border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
+  .message.info { background: var(--card); } .message.ok { background: var(--ok-bg); color: var(--ok); }
+  .message.warn { background: var(--warn-bg); color: var(--warn); } .message.error { background: var(--err-bg); color: var(--err); }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 0 0 16px; overflow-x: auto; }
+  .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none;
+    color: var(--muted); padding: 10px 14px; font-weight: 600; white-space: nowrap; }
+  .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel[hidden] { display: none; }
+  body[data-tab="accueil"] .app-head { display: none; }
+  .hero { position: relative; margin: 0 0 16px; border-radius: 14px; overflow: hidden; background: #3a4a5a; }
+  .hero img { display: block; width: 100%; height: clamp(260px, 52vw, 520px); object-fit: cover; object-position: center 35%; }
+  .hero figcaption { position: absolute; inset: auto 0 0 0; padding: 48px 24px 22px; color: #fff;
+    background: linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,0)); }
+  .hero h1 { font-size: clamp(26px, 4.5vw, 42px); margin: 0; letter-spacing: -.01em; }
+  .hero p { margin: 4px 0 0; font-size: 16px; opacity: .9; }
+  .tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .tool { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px 18px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  button.tool:hover { border-color: var(--accent); }
+  .tool strong { font-size: 16px; }
+  .tool span { color: var(--muted); font-size: 14px; }
+  .tool.soon { opacity: .7; }
+  .actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+</style>
+</head>
+<body data-tab="accueil">
+<main>
+  <header class="app-head">
+    <h1>Couteau suisse de la Doyenne</h1>
+    <p class="sub">Génération des documents à partir des fichiers Excel.</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="accueil" aria-selected="true">Accueil</button>
+    <button type="button" role="tab" data-tab="listing" aria-selected="false">Heures d'arrêts</button>
+    <button type="button" role="tab" data-tab="bientot" aria-selected="false">Prochainement :)</button>
+  </nav>
+
+  <div class="tab-panel" data-tab="accueil">
+    <figure class="hero">
+      <img src="__ACCUEIL_IMG__" alt="Lac de montagne et barrage, randonneurs sur le sentier">
+      <figcaption>
+        <h1>Couteau suisse de la Doyenne</h1>
+        <p>Les petits outils qui font gagner du temps au décanat.</p>
+      </figcaption>
+    </figure>
+    <div class="tools">
+      <button type="button" class="tool" data-goto="listing">
+        <strong>Heures d'arrêts</strong>
+        <span>Listing des élèves pour les enseignants, à partir du classeur Excel.</span>
+      </button>
+      <div class="tool soon">
+        <strong>Prochainement :)</strong>
+        <span>D'autres outils arrivent bientôt.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-tab="listing" hidden>
+  <div id="message" class="message" hidden></div>
+  <section class="card">
+    <h2><span class="step">1</span> Classeur Excel</h2>
+    <div id="drop">
+      <strong>Glisser le fichier « Heures d'arrêts ….xlsx » ici</strong><br>ou cliquer pour le choisir
+      <span id="filename"></span>
+    </div>
+    <input id="file" type="file" accept=".xlsx,.xlsm,.xls" hidden>
+    <div id="step-sheet" class="row" style="margin-top:14px" hidden>
+      <label for="sheet">Date (feuille)</label>
+      <select id="sheet"></select>
+      <span id="sheet-info"></span>
+    </div>
+  </section>
+
+  <section class="card" id="step-teachers" hidden>
+    <h2><span class="step">2</span> Surveillant·es</h2>
+    <div class="row">
+      <label>Nombre</label>
+      <span class="counter"><button id="minus" type="button">−</button><input id="count" type="number" min="1" max="8"><button id="plus" type="button">+</button></span>
+      <label for="salles" style="margin-left:12px">Salles</label>
+      <input id="salles" type="text" style="width:200px">
+      <span class="hint">séparées par « / »</span>
+    </div>
+    <div id="teachers"></div>
+  </section>
+
+  <section class="card" id="step-result" hidden>
+    <div class="actions">
+      <h2 style="margin:0"><span class="step">3</span> Répartition</h2>
+      <button id="auto" type="button">Répartir automatiquement</button>
+    </div>
+    <p class="hint" style="margin:8px 0 0">Les frères et sœurs (même nom ou même adresse) et les élèves d'une même classe sont séparés quand c'est possible. Le menu à droite de chaque élève permet de le déplacer.</p>
+    <p id="summary" class="summary"></p>
+    <div id="columns"></div>
+    <div class="actions" style="margin-top:20px">
+      <span></span>
+      <button id="generate" class="primary" type="button">Générer le Word</button>
+    </div>
+  </section>
+  </div>
+  <div class="tab-panel" data-tab="bientot" hidden>
+    <section class="card"><p class="hint" style="margin:0">D'autres outils arrivent bientôt ici.</p></section>
+  </div>
+</main>
+<script>/*__LIBS__*/</script>
+<script>/*__CORE__*/</script>
+<script>/*__TEMPLATE__*/</script>
+<script>/*__APP__*/</script>
+</body>
+</html>

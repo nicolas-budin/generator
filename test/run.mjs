@@ -1,0 +1,24 @@
+// Test de bout en bout sans navigateur : node test/run.mjs <feuille> <nb surveillant·es> <sortie.docx>
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+import JSZip from 'jszip';
+import XLSX from 'xlsx';
+const require = createRequire(import.meta.url);
+const Core = require('../src/core.js');
+const [sheet = '28.10.2026', n = '2', out = 'test/out.docx'] = process.argv.slice(2);
+const tpl = JSON.parse(fs.readFileSync('dist-template.json', 'utf8'));
+const wb = XLSX.read(fs.readFileSync("Heures d'arrêts 2026-2027.xlsx"));
+const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheet], { header: 1, raw: true, defval: '' });
+const { students, date } = Core.parseRows(rows, sheet);
+const assign = Core.distribute(students, +n);
+const c = Core.conflicts(students, assign, +n);
+console.log(students.length, 'élèves', Core.formatDateLong(date), 'conflits famille', c.famille, 'classe', c.classe);
+const names = ['Laetitia Prenleloup', 'Jean-Claude Sahli', 'Troisième Personne'];
+const salles = ['B121', 'B214', 'B220'];
+const pages = Array.from({ length: +n }, (_, i) => ({ enseignant: names[i], salle: salles[i], students: students.filter((s) => assign[s.id] === i) }));
+for (const p of pages) console.log('--', p.enseignant, p.students.length, '\n   ' + p.students.map(Core.studentLine).join('\n   '));
+students.filter((s) => !s.catSure).forEach((s) => console.log('classe incertaine:', s.classe));
+const zip = await JSZip.loadAsync(fs.readFileSync('modele.docx'));
+zip.file('word/document.xml', Core.buildDocumentXml(tpl, { date, salles, pages }));
+fs.writeFileSync(out, await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }));
+console.log('écrit', out);
